@@ -198,13 +198,12 @@ def home():
                 analysis = None
                 error = str(exc)
 
-            except requests.RequestException:
+            except requests.RequestException as exc:
 
-                analysis = None
-                error = (
-                    "Unable to connect to GitHub. "
-                    "Please check your internet connection."
-                )
+    print("GITHUB API ERROR:", repr(exc))
+
+    analysis = None
+    error = f"GitHub request failed: {type(exc).__name__}: {exc}"
 
             except Exception as exc:
 
