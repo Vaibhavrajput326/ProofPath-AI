@@ -198,18 +198,18 @@ def home():
                 analysis = None
                 error = str(exc)
 
+            except ValueError as exc:
+                analysis = None
+                error = str(exc)
+
             except requests.RequestException as exc:
-
-    print("GITHUB API ERROR:", repr(exc))
-
-    analysis = None
-    error = f"GitHub request failed: {type(exc).__name__}: {exc}"
+                print("GITHUB API ERROR:", repr(exc))
+                analysis = None
+                error = f"GitHub request failed: {type(exc).__name__}: {exc}"
 
             except Exception as exc:
-
                 analysis = None
                 error = f"Unexpected error: {exc}"
-
     return render_template(
         "index.html",
         roles=list(ROLE_REQUIREMENTS.keys()),
