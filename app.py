@@ -198,10 +198,6 @@ def home():
                 analysis = None
                 error = str(exc)
 
-            except ValueError as exc:
-                analysis = None
-                error = str(exc)
-
             except requests.RequestException as exc:
                 print("GITHUB API ERROR:", repr(exc))
                 analysis = None
