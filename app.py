@@ -14,6 +14,7 @@ from engine import (
 import requests
 import base64
 import re
+import os
 
 app = Flask(__name__)
 
@@ -33,9 +34,10 @@ def fetch_github_evidence(url):
     owner, repo = match.groups()
 
     headers = {
-        "Accept": "application/vnd.github+json",
-        "User-Agent": "ProofPath-AI"
-    }
+    "Accept": "application/vnd.github+json",
+    "User-Agent": "ProofPath-AI",
+    "Authorization": f"Bearer {os.getenv('GITHUB_TOKEN', '')}"
+}
 
     api_url = f"https://api.github.com/repos/{owner}/{repo}"
 
@@ -161,9 +163,10 @@ def home():
 
         else:
 
+            
             try:
 
-                # 1. Manual skill evidence analysis
+                # 1. CORE ANALYSIS - Always runs independently
                 analysis = analyze_skills(
                     claimed_skills=skills,
                     evidence=evidence,
@@ -171,41 +174,48 @@ def home():
                     role=role
                 )
 
-                # 2. AI/ML relevance analysis
+                # 2. AI RELEVANCE - Always runs independently
                 ai_relevance = calculate_ai_relevance(
                     evidence=evidence,
                     role=role
                 )
 
-                # 3. GitHub repository analysis
+                # 3. OPTIONAL GITHUB ANALYSIS
                 if github_url:
 
-                    github_data = fetch_github_evidence(
-                        github_url
-                    )
+                    try:
+                        github_data = fetch_github_evidence(
+                            github_url
+                        )
 
-                    # 4. Detect repository-backed signals
-                    repository_signals = detect_repository_signals(
-                        github_data["inspected_files"]
-                    )
+                        repository_signals = detect_repository_signals(
+                            github_data["inspected_files"]
+                        )
 
-                    github_message = (
-                        "GitHub repository analyzed successfully."
-                    )
+                        github_message = (
+                            "GitHub repository analyzed successfully."
+                        )
 
-            except ValueError as exc:
+                    except Exception as exc:
 
-                analysis = None
-                error = str(exc)
+                        print("GITHUB ANALYSIS ERROR:", repr(exc))
 
-            except requests.RequestException as exc:
-                print("GITHUB API ERROR:", repr(exc))
-                analysis = None
-                error = f"GitHub request failed: {type(exc).__name__}: {exc}"
+                        github_data = None
+                        repository_signals = []
+
+                        github_message = (
+                            f"GitHub analysis unavailable: {exc}. "
+                            "Core skill analysis completed successfully."
+                        )
+
 
             except Exception as exc:
+
+                print("CORE ANALYSIS ERROR:", repr(exc))
                 analysis = None
-                error = f"Unexpected error: {exc}"
+                ai_relevance = []
+                error = f"Core analysis failed: {exc}"
+
     return render_template(
         "index.html",
         roles=list(ROLE_REQUIREMENTS.keys()),
